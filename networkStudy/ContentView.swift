@@ -8,17 +8,44 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("network experiment")
-        }
-        .padding()
-    }
+	
+	private let server = TCPServer()
+	private let client = TCPClient()
+	
+	
+	var body: some View {
+		VStack {
+			Button {
+				server.start()
+			} label: {
+				HStack{
+					Image(systemName: "server.rack")
+				Text("サーバーを起動")
+			
+				}
+				.padding(16)
+				}
+			.glassEffect()
+			
+			Spacer()
+			Button{
+				client.connect()
+			} label: {
+				HStack{
+					Image(systemName: "figure.stand")
+					Text("クライアントを起動")
+				}
+				.padding(16)
+			}
+			
+			.glassEffect()
+			.padding()
+			
+		}
+		.padding()
+	}
 }
 
 #Preview {
-    ContentView()
+	ContentView()
 }

@@ -18,6 +18,13 @@ final class TCPServer {
 			minimumIncompleteLength: 1, //簡単に言ったら1バイトでもデータが届いたら受信結果を返してもよいってこと
 			maximumLength: 1024 //maxmumは一回の通信で何倍とまで受け取るかを指定。
 		) {data, context, isComplete, error in
+			
+			//もしここでerrorに何かしらの情報がいたらここで処理を中断すべき
+			if let error{
+				print("Receive error : \(error)")
+				return
+			}
+			
 			//もちろん通信なのでdataが存在する保証がないため存在する時のみに実行するように if let 構文を使用している
 			if let data,
 			   let message = String(data: data, encoding: .utf8) {
@@ -26,7 +33,14 @@ final class TCPServer {
 			
 			//もしここで処理を止めてしまったら次からの通信を受け取ることができなくなってしまう。
 			//なぜならTCPは受け取ったら次の通信に備えてまたreceiveを起動しないとダメだから。そのため、再帰的な処理を下に記述していく。
-		
+			
+			
+			//相手側から通信完了があれば次のreceiveは不要
+			if isComplete {
+				print("Connection completed ")
+				return
+			}
+			
 			//次のデータを待つ
 			self.receive(on: connection)
 		}
@@ -37,8 +51,17 @@ final class TCPServer {
 			//ここではポート5000で通信を行うオブジェクトを生成しただけ
 			listener = try NWListener(
 				using: .tcp,
-				on: 5000
+				on: 5001
 			)
+			
+			listener?.stateUpdateHandler = { state in
+				switch state {
+				case .ready:
+					print("Server is ready!")
+				default:
+					print("Listener state : \(state)")
+				}
+			}
 			
 			//イベント駆動型のものでは先にして欲しい挙動を先に記述しておいて準備ができてからサーバを起動する方が設計上良い。
 			//受付開始してから受け取った時のイベントを定義していると、その間の時間にきたリクエストの処理を考えることになるから。
