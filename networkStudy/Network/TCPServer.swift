@@ -16,7 +16,7 @@ final class TCPServer {
 	private func receive(on connection: NWConnection) {
 		connection.receive(
 			minimumIncompleteLength: 1, //簡単に言ったら1バイトでもデータが届いたら受信結果を返してもよいってこと
-			maximumLength: 1024 //maxmumは一回の通信で何倍とまで受け取るかを指定。
+			maximumLength:1024//maxmumは一回のreceiveで何バイトまで受け取るかを指定。残りデータは再帰的なreceiveで受け取る
 		) {data, context, isComplete, error in
 			
 			//もしここでerrorに何かしらの情報がいたらここで処理を中断すべき
@@ -25,10 +25,29 @@ final class TCPServer {
 				return
 			}
 			
+		
+			
 			//もちろん通信なのでdataが存在する保証がないため存在する時のみに実行するように if let 構文を使用している
 			if let data,
 			   let message = String(data: data, encoding: .utf8) {
 				print("Recieved Message: \(message)")
+				
+				
+				let reply = Data("received".utf8)
+				
+				connection.send(
+					content: reply,
+					contentContext: .finalMessage,
+					isComplete: true,
+					completion: .contentProcessed { error in
+						if let error {
+							print("reply send error: \(error)")
+							return
+						}
+						
+						print("Server sent reply ")
+					}
+				)
 			}
 			
 			//もしここで処理を止めてしまったら次からの通信を受け取ることができなくなってしまう。
